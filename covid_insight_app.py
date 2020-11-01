@@ -56,7 +56,7 @@ state_fips_dict = load_dictionary()
 
 # Welcome to COVID-19 data insight
 
-st.title("Welcome to COVID-19 data insight")
+st.title("Welcome to COVID-19 Data Insight")
 
 st.markdown("---")
 st.markdown("## Dynamics matters")
@@ -68,7 +68,7 @@ st.markdown("The data used in this site is from [NY Times COVID-19 data](https:/
 st.markdown("---")
 
 # choose data
-st.markdown("## Please choose what data you want to look:")
+st.markdown("## First, Choose Data")
 data_type=st.selectbox('',('Confirmed Cases', 'Confirmed Deaths'))
 
 if data_type == "Confirmed Cases":
@@ -102,7 +102,7 @@ st.markdown("---")
 
 #--- animation map of acceleration ---
 
-st.markdown("## Evolution of Acceleration on a Map")
+st.markdown("## Evolution of Acceleration on A Map")
 st.markdown("Based on 7-day rolling average acceleration of "+data_type)
 
 with open('data/us-states.json') as response_new:
