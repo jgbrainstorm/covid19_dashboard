@@ -28,7 +28,7 @@ def load_data():
     states = df.state.unique().tolist()
     states.sort()
     date_list = dft.index.tolist()
-    state_fips = pd.read_csv('state_fips.csv')
+    state_fips = pd.read_csv('data/state_fips.csv')
     state_fips_dict = dict(zip(state_fips.state, state_fips.fips))
     return df, dft, dfd, states, date_list,state_fips_dict
 
@@ -42,7 +42,7 @@ def load_data():
 
 @st.cache
 def load_dictionary():
-    state_fips = pd.read_csv('state_fips.csv')
+    state_fips = pd.read_csv('data/state_fips.csv')
     state_fips_dict = dict(zip(state_fips.state, state_fips.fips))
     return state_fips_dict
 
@@ -57,7 +57,13 @@ state_fips_dict = load_dictionary()
 # Welcome to COVID-19 data insight
 
 st.title("Welcome to COVID-19 data insight")
-st.markdown("> The purpose of this site is to provide some additional/complementary visualization that are not typically shown by other covid-19 sites. The data used in this site is from [NY Times COVID-19 data](https://github.com/nytimes/covid-19-data). Please send your comments and suggestions to: [jianganghao@gmail.com](jianganghao@gmail.com)")
+
+st.markdown("## Dynamics matters")
+st.markdown("> Newton's second law of motion, _**F**_ = _**m**_ _**a**_, links the apparent position changes of an object to the force that leads to these changes, making it possible to undertand the underlying mechanism of the system and therefore predict the future of the changes. Here we draw a simple analogy, trying to understand the _**force**_ that drives the change of the numbers of COVID cases.")
+
+st.markdown("> The widely used [compartmental models in epidemiology](https://en.wikipedia.org/wiki/Compartmental_models_in_epidemiology), such as the SRI model, are all based on the first order derivative of the number of cases and therefore they describe more about the _**kinematics**_. The ideas here are to consider the second order derivative, trying to shed light on the _**dynamics**_ of the changes of the numbers." )
+
+st.markdown("> The data used in this site is from [NY Times COVID-19 data](https://github.com/nytimes/covid-19-data). Please send your comments and suggestions to: [jianganghao@gmail.com](jianganghao@gmail.com)")
 st.markdown("---")
 
 # choose data
@@ -69,10 +75,13 @@ if data_type == "Confirmed Cases":
 else:
     dfx = dfd
 
-    
+date_min = dfx.date.min()
+date_max = dfx.date.max()
+
+# ---  single state summary ---------
 st.markdown("## Your state at a glance")
 
-select_single_state = st.select_slider('Choose One States You Want to Get a Summary',states,value='New Jersey')
+select_single_state = st.select_slider('Choose one State you want to get a Summary',states,value='New Jersey')
 
 average_increase = dfx.query('date >= @default_starting_date & date <= @default_ending_date').loc[:,[select_single_state]].diff().mean().values[0]
 
@@ -87,13 +96,40 @@ st.markdown(f"* The Average of new {data_type} of every day is: **{round(average
 st.markdown(f"* The Average acceleration of new {data_type} of every day is: **{round(average_acceleration)}**")
 
 
-#----------------------section -------------
-date_min = dfx.date.min()
-date_max = dfx.date.max()
+
+st.markdown("---")
+
+#--- animation map of acceleration ---
+
+st.markdown("## Evolution of Acceleration on a Map")
+st.markdown("Based on 7-day rolling average acceleration of "+data_type)
+
+with open('data/us-states.json') as response_new:
+    state_json = json.load(response_new)
+
+df_state_new = dfx.set_index('date').diff().diff().rolling(7).mean().stack().reset_index()
+df_state_new.columns=['date','state','acceleration']
+df_state_new['fips'] = df_state_new.state.replace(state_fips_dict).astype('str')
+
+date_map= st.slider("Choose a date",date_min, date_max, value=default_starting_date,key='date_map')
+
+if data_type == "Confirmed Cases":
+    fig_map = px.choropleth_mapbox(df_state_new.query('date == @date_map'), geojson=state_json, locations='fips', color='acceleration', color_continuous_scale="RdBu_r", range_color=(-1000, 1000),mapbox_style="carto-positron", zoom=2.5, center = {"lat": 37.0902, "lon": -95.7129},opacity=1,hover_name='state')
+else:
+    fig_map = px.choropleth_mapbox(df_state_new.query('date == @date_map'), geojson=state_json, locations='fips', color='acceleration', color_continuous_scale="RdBu_r", range_color=(-100, 100),mapbox_style="carto-positron", zoom=2.5, center = {"lat": 37.0902, "lon": -95.7129},opacity=1,hover_name='state')
+    
+
+fig_map.update_layout(width=700,height=500)
+
+st.plotly_chart(fig_map)
+
+
+#----------------------All state Acceleration -------------
+
 
 st.markdown('---')
 # All states mean acceleration plot
-st.markdown("## Average Acceleration of Cases")
+st.markdown("## Average Acceleration of All States")
 
 #start_date = st.date_input("Choose Starting Date",default_starting_date)
 start_date = st.slider("Choose Starting Date",date_min, date_max, value=default_starting_date,key='start_date')
@@ -111,7 +147,10 @@ st.plotly_chart(fig_acc2)
 
 
 
-# Specific states EPI and Acceleration
+
+
+
+# ----- Specific states EPI and Acceleration ------
 st.markdown('---')
 st.markdown("## State Level Statistics")
 select_state = st.multiselect('Choose One or More States',states,default='New Jersey')
@@ -144,25 +183,4 @@ fig_state_acc.update_layout(width=770,height=500,legend=dict(
 st.plotly_chart(fig_state_epi)
 st.plotly_chart(fig_state_acc)
 
-#--- animation map of acceleration 
-
-with open('us-states.json') as response_new:
-    state_json = json.load(response_new)
-
-st.markdown("## The Evolution of Acceleration Map")
-
-df_state_new = dfx.set_index('date').diff().diff().rolling(7).mean().stack().reset_index()
-df_state_new.columns=['date','state','acceleration']
-df_state_new['fips'] = df_state_new.state.replace(state_fips_dict).astype('str')
-
-date_map= st.slider("Choose a Date",date_min, date_max, value=default_starting_date,key='date_map')
-
-if data_type == "Confirmed Cases":
-    fig_map = px.choropleth_mapbox(df_state_new.query('date == @date_map'), geojson=state_json, locations='fips', color='acceleration', color_continuous_scale="RdBu_r", range_color=(-1000, 1000),mapbox_style="carto-positron", zoom=2.8, center = {"lat": 37.0902, "lon": -95.7129},opacity=1,hover_name='state',title='Seven day rolling average acceleration of '+data_type)
-else:
-    fig_map = px.choropleth_mapbox(df_state_new.query('date == @date_map'), geojson=state_json, locations='fips', color='acceleration', color_continuous_scale="RdBu_r", range_color=(-100, 100),mapbox_style="carto-positron", zoom=2.8, center = {"lat": 37.0902, "lon": -95.7129},opacity=1,hover_name='state',title='Seven day rolling average acceleration of '+data_type)
-    
-
-fig_map.update_layout(width=770,height=560)
-
-st.plotly_chart(fig_map)
+st.markdown("---")
