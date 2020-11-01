@@ -1,0 +1,168 @@
+import streamlit as st
+import streamlit.components.v1 as components
+import plotly.express as px
+import pandas as pd
+import sqlite3
+import datetime
+from urllib.request import urlopen
+import json
+
+
+
+# --- define contant variables -----
+
+today = datetime.date.today()
+default_starting_date = today - datetime.timedelta(days=9)
+default_ending_date = today - datetime.timedelta(days=2)
+default_amonth_ago = today - datetime.timedelta(days=30)
+plot_template='plotly_white'
+
+
+# --- define functions -------
+
+@st.cache
+def load_data():
+    df = pd.read_csv('https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-counties.csv',parse_dates=['date'])
+    dft = df.pivot_table(values='cases', index='date',columns='state',aggfunc='sum').reset_index() # new cases
+    dfd = df.pivot_table(values='deaths', index='date',columns='state',aggfunc='sum').reset_index() # death
+    states = df.state.unique().tolist()
+    states.sort()
+    date_list = dft.index.tolist()
+    state_fips = pd.read_csv('state_fips.csv')
+    state_fips_dict = dict(zip(state_fips.state, state_fips.fips))
+    return df, dft, dfd, states, date_list,state_fips_dict
+
+#@st.cache
+#def load_geojson():
+    #with urlopen('https://raw.githubusercontent.com/plotly/datasets/master/geojson-counties-fips.json') as response:
+    #    counties_json = json.load(response)
+#    with open('us-states.json') as response_new:
+#        state_json = json.load(response_new)
+#    return state_json
+
+@st.cache
+def load_dictionary():
+    state_fips = pd.read_csv('state_fips.csv')
+    state_fips_dict = dict(zip(state_fips.state, state_fips.fips))
+    return state_fips_dict
+
+# --- Load data -----
+#state_fips_dict = load_dictionary()
+df, dft, dfd, states, date_list,state_fips_dict = load_data()
+
+
+state_fips_dict = load_dictionary()
+
+
+# Welcome to COVID-19 data insight
+
+st.title("Welcome to COVID-19 data insight")
+st.markdown("> The purpose of this site is to provide some additional/complementary visualization that are not typically shown by other covid-19 sites. The data used in this site is from [NY Times COVID-19 data](https://github.com/nytimes/covid-19-data). Please send your comments and suggestions to: [jianganghao@gmail.com](jianganghao@gmail.com)")
+st.markdown("---")
+
+# choose data
+st.markdown("## Please choose what data you want to look:")
+data_type=st.selectbox('',('Confirmed Cases', 'Confirmed Deaths'))
+
+if data_type == "Confirmed Cases":
+    dfx = dft
+else:
+    dfx = dfd
+
+    
+st.markdown("## Your state at a glance")
+
+select_single_state = st.select_slider('Choose One States You Want to Get a Summary',states,value='New Jersey')
+
+average_increase = dfx.query('date >= @default_starting_date & date <= @default_ending_date').loc[:,[select_single_state]].diff().mean().values[0]
+
+average_acceleration = dfx.query('date >= @default_starting_date & date <= @default_ending_date').loc[:,[select_single_state]].diff().diff().mean().values[0]
+
+
+current_total = dfx.query('date == @default_ending_date').loc[:,select_single_state].values[0]
+
+st.markdown(f"### In the week from {default_starting_date} to {default_ending_date}, in the State of {select_single_state}")
+st.markdown(f"* The total {data_type} as of {default_ending_date} is: **{round(current_total)}**")
+st.markdown(f"* The Average of new {data_type} of every day is: **{round(average_increase)}**")
+st.markdown(f"* The Average acceleration of new {data_type} of every day is: **{round(average_acceleration)}**")
+
+
+#----------------------section -------------
+date_min = dfx.date.min()
+date_max = dfx.date.max()
+
+st.markdown('---')
+# All states mean acceleration plot
+st.markdown("## Average Acceleration of Cases")
+
+#start_date = st.date_input("Choose Starting Date",default_starting_date)
+start_date = st.slider("Choose Starting Date",date_min, date_max, value=default_starting_date,key='start_date')
+end_date = st.slider("Choose Ending Date", date_min, date_max,value=default_ending_date,key='end_date')
+
+
+# display bar chart
+dff = dfx.query('date >= @start_date and date <= @end_date').set_index('date').diff().diff().mean()
+fig_acc1 = px.bar(dff[0:25],labels={'value':'Mean '+data_type+' Acceleration','state':''},template=plot_template)
+fig_acc1.update_layout(width=770,showlegend=False)
+fig_acc2 = px.bar(dff[25:],labels={'value':'Mean '+data_type+' Acceleration','state':''},template=plot_template)
+fig_acc2.update_layout(width=770,showlegend=False)
+st.plotly_chart(fig_acc1)
+st.plotly_chart(fig_acc2)
+
+
+
+# Specific states EPI and Acceleration
+st.markdown('---')
+st.markdown("## State Level Statistics")
+select_state = st.multiselect('Choose One or More States',states,default='New Jersey')
+
+start_date_state = st.slider("Choose Starting Date",date_min, date_max,value=default_amonth_ago,key='start_date_state')
+end_date_state = st.slider("Choose Ending Date", date_min, date_max,value=default_ending_date,key='end_date_state')
+
+
+
+df_state = dfx.query('date >= @start_date_state & date <= @end_date_state').set_index('date').loc[:,select_state]
+#df_state = dfx.query('date> @default_starting_date').set_index('date').loc[:,select_state]
+
+
+fig_state_epi = px.bar(df_state.diff().round(),labels={'value':'New '+data_type,'date':''},template=plot_template)
+fig_state_epi.update_layout(width=770,height=500,legend=dict(
+    yanchor="top",
+    y=0.99,
+    xanchor="left",
+    x=0.01
+))
+fig_state_acc = px.area(df_state.diff().diff().rolling(7).mean(),labels={'value':data_type+' Acceleration','date':''},template=plot_template)
+
+fig_state_acc.update_layout(width=770,height=500,legend=dict(
+    yanchor="top",
+    y=0.99,
+    xanchor="left",
+    x=0.01
+))
+
+st.plotly_chart(fig_state_epi)
+st.plotly_chart(fig_state_acc)
+
+#--- animation map of acceleration 
+
+with open('us-states.json') as response_new:
+    state_json = json.load(response_new)
+
+st.markdown("## The Evolution of Acceleration Map")
+
+df_state_new = dfx.set_index('date').diff().diff().rolling(7).mean().stack().reset_index()
+df_state_new.columns=['date','state','acceleration']
+df_state_new['fips'] = df_state_new.state.replace(state_fips_dict).astype('str')
+
+date_map= st.slider("Choose a Date",date_min, date_max, value=default_starting_date,key='date_map')
+
+if data_type == "Confirmed Cases":
+    fig_map = px.choropleth_mapbox(df_state_new.query('date == @date_map'), geojson=state_json, locations='fips', color='acceleration', color_continuous_scale="RdBu_r", range_color=(-1000, 1000),mapbox_style="carto-positron", zoom=2.8, center = {"lat": 37.0902, "lon": -95.7129},opacity=1,hover_name='state',title='Seven day rolling average acceleration of '+data_type)
+else:
+    fig_map = px.choropleth_mapbox(df_state_new.query('date == @date_map'), geojson=state_json, locations='fips', color='acceleration', color_continuous_scale="RdBu_r", range_color=(-100, 100),mapbox_style="carto-positron", zoom=2.8, center = {"lat": 37.0902, "lon": -95.7129},opacity=1,hover_name='state',title='Seven day rolling average acceleration of '+data_type)
+    
+
+fig_map.update_layout(width=770,height=560)
+
+st.plotly_chart(fig_map)
