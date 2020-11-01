@@ -58,12 +58,13 @@ state_fips_dict = load_dictionary()
 
 st.title("Welcome to COVID-19 data insight")
 
+st.markdown("---")
 st.markdown("## Dynamics matters")
-st.markdown("> Newton's second law of motion, _**F**_ = _**m**_ _**a**_, links the apparent position changes of an object to the force that leads to these changes, making it possible to undertand the underlying mechanism of the system and therefore predict the future of the changes. Here we draw a simple analogy, trying to understand the _**force**_ that drives the change of the numbers of COVID cases.")
+st.markdown("Newton's second law of motion, _**F**_ = _**m**_ _**a**_, links the apparent position changes of an object to the force that leads to these changes, making it possible to undertand the underlying mechanism of the system and therefore predict the future of the changes. Here we draw a simple analogy, trying to understand the _**force**_ that drives the change of the numbers of COVID cases.")
 
-st.markdown("> The widely used [compartmental models in epidemiology](https://en.wikipedia.org/wiki/Compartmental_models_in_epidemiology), such as the SRI model, are all based on the first order derivative of the number of cases and therefore they describe more about the _**kinematics**_. The ideas here are to consider the second order derivative, trying to shed light on the _**dynamics**_ of the changes of the numbers." )
+st.markdown("The widely used [compartmental models in epidemiology](https://en.wikipedia.org/wiki/Compartmental_models_in_epidemiology), such as the SRI model, are all based on the first order derivative of the number of cases and therefore they describe more about the _**kinematics**_. The ideas here are to consider the second order derivative to try to shed some light on the _**dynamics**_ of the changes of the numbers." )
 
-st.markdown("> The data used in this site is from [NY Times COVID-19 data](https://github.com/nytimes/covid-19-data). Please send your comments and suggestions to: [jianganghao@gmail.com](jianganghao@gmail.com)")
+st.markdown("The data used in this site is from [NY Times COVID-19 data](https://github.com/nytimes/covid-19-data). Please send your comments and suggestions to: [jianganghao@gmail.com](jianganghao@gmail.com)")
 st.markdown("---")
 
 # choose data
