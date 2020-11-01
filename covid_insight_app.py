@@ -117,7 +117,7 @@ date_map= st.slider("Choose a date",date_min, date_max, value=default_starting_d
 if data_type == "Confirmed Cases":
     fig_map = px.choropleth_mapbox(df_state_new.query('date == @date_map'), geojson=state_json, locations='fips', color='acceleration', color_continuous_scale="RdBu_r", range_color=(-1000, 1000),mapbox_style="carto-positron", zoom=2.5, center = {"lat": 37.0902, "lon": -95.7129},opacity=1,hover_name='state')
 else:
-    fig_map = px.choropleth_mapbox(df_state_new.query('date == @date_map'), geojson=state_json, locations='fips', color='acceleration', color_continuous_scale="RdBu_r", range_color=(-100, 100),mapbox_style="carto-positron", zoom=2.5, center = {"lat": 37.0902, "lon": -95.7129},opacity=1,hover_name='state')
+    fig_map = px.choropleth_mapbox(df_state_new.query('date == @date_map'), geojson=state_json, locations='fips', color='acceleration', color_continuous_scale="RdBu_r", range_color=(-50, 50),mapbox_style="carto-positron", zoom=2.5, center = {"lat": 37.0902, "lon": -95.7129},opacity=1,hover_name='state')
     
 
 fig_map.update_layout(width=700,height=500)
