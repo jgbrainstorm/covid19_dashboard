@@ -80,7 +80,7 @@ date_min = dfx.date.min()
 date_max = dfx.date.max()
 
 # ---  single state summary ---------
-st.markdown("## Your state at a glance")
+st.markdown("## Your State at A Glance")
 
 select_single_state = st.select_slider('Choose one State you want to get a Summary',states,value='New Jersey')
 
@@ -153,7 +153,7 @@ st.plotly_chart(fig_acc2)
 
 # ----- Specific states EPI and Acceleration ------
 st.markdown('---')
-st.markdown("## State Level Statistics")
+st.markdown("## Comparisons across States")
 select_state = st.multiselect('Choose One or More States',states,default='New Jersey')
 
 start_date_state = st.slider("Choose Starting Date",date_min, date_max,value=default_amonth_ago,key='start_date_state')
