@@ -15,6 +15,7 @@ today = datetime.date.today()
 default_starting_date = today - datetime.timedelta(days=9)
 default_ending_date = today - datetime.timedelta(days=2)
 default_amonth_ago = today - datetime.timedelta(days=30)
+default_8month_ago = today - datetime.timedelta(days=240)
 plot_template='plotly_white'
 
 
@@ -154,9 +155,9 @@ st.plotly_chart(fig_acc2)
 # ----- Specific states EPI and Acceleration ------
 st.markdown('---')
 st.markdown("## Comparisons across States")
-select_state = st.multiselect('Choose One or More States',states,default='New Jersey')
+select_state = st.multiselect('Choose One or More States',states,default=['New Jersey','California'])
 
-start_date_state = st.slider("Choose Starting Date",date_min, date_max,value=default_amonth_ago,key='start_date_state')
+start_date_state = st.slider("Choose Starting Date",date_min, date_max,value=default_8month_ago,key='start_date_state')
 end_date_state = st.slider("Choose Ending Date", date_min, date_max,value=default_ending_date,key='end_date_state')
 
 
@@ -185,3 +186,5 @@ st.plotly_chart(fig_state_epi)
 st.plotly_chart(fig_state_acc)
 
 st.markdown("---")
+
+st.markdown("## More is coming soon ...")
