@@ -21,7 +21,7 @@ plot_template='plotly_white'
 
 # --- define functions -------
 
-@st.cache
+@st.cache(ttl=3600)
 def load_data():
     df = pd.read_csv('https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-counties.csv',parse_dates=['date'])
     dft = df.pivot_table(values='cases', index='date',columns='state',aggfunc='sum').reset_index() # new cases
@@ -41,7 +41,7 @@ def load_data():
 #        state_json = json.load(response_new)
 #    return state_json
 
-@st.cache
+@st.cache(ttl=3600)
 def load_dictionary():
     state_fips = pd.read_csv('data/state_fips.csv')
     state_fips_dict = dict(zip(state_fips.state, state_fips.fips))
