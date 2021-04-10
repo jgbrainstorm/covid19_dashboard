@@ -1,10 +1,11 @@
 import streamlit as st
+import streamlit.components.v1 as components
 import plotly.express as px
 import pandas as pd
+import sqlite3
 import datetime
+from urllib.request import urlopen
 import json
-import plotly.io as pio
-pio.templates.default="ggplot2"
 
 
 
@@ -14,13 +15,12 @@ today = datetime.date.today()
 default_starting_date = today - datetime.timedelta(days=9)
 default_ending_date = today - datetime.timedelta(days=2)
 default_amonth_ago = today - datetime.timedelta(days=30)
-default_8month_ago = today - datetime.timedelta(days=240)
-
+plot_template='plotly_white'
 
 
 # --- define functions -------
 
-@st.cache(ttl=3600)
+@st.cache
 def load_data():
     df = pd.read_csv('https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-counties.csv',parse_dates=['date'])
     dft = df.pivot_table(values='cases', index='date',columns='state',aggfunc='sum').reset_index() # new cases
@@ -32,8 +32,15 @@ def load_data():
     state_fips_dict = dict(zip(state_fips.state, state_fips.fips))
     return df, dft, dfd, states, date_list,state_fips_dict
 
+#@st.cache
+#def load_geojson():
+    #with urlopen('https://raw.githubusercontent.com/plotly/datasets/master/geojson-counties-fips.json') as response:
+    #    counties_json = json.load(response)
+#    with open('us-states.json') as response_new:
+#        state_json = json.load(response_new)
+#    return state_json
 
-@st.cache(ttl=3600)
+@st.cache
 def load_dictionary():
     state_fips = pd.read_csv('data/state_fips.csv')
     state_fips_dict = dict(zip(state_fips.state, state_fips.fips))
@@ -132,9 +139,9 @@ end_date = st.slider("Choose Ending Date", date_min, date_max,value=default_endi
 
 # display bar chart
 dff = dfx.query('date >= @start_date and date <= @end_date').set_index('date').diff().diff().mean()
-fig_acc1 = px.bar(dff[0:25],labels={'value':'Mean '+data_type+' Acceleration','state':''})
+fig_acc1 = px.bar(dff[0:25],labels={'value':'Mean '+data_type+' Acceleration','state':''},template=plot_template)
 fig_acc1.update_layout(width=770,showlegend=False)
-fig_acc2 = px.bar(dff[25:],labels={'value':'Mean '+data_type+' Acceleration','state':''})
+fig_acc2 = px.bar(dff[25:],labels={'value':'Mean '+data_type+' Acceleration','state':''},template=plot_template)
 fig_acc2.update_layout(width=770,showlegend=False)
 st.plotly_chart(fig_acc1)
 st.plotly_chart(fig_acc2)
@@ -147,9 +154,9 @@ st.plotly_chart(fig_acc2)
 # ----- Specific states EPI and Acceleration ------
 st.markdown('---')
 st.markdown("## Comparisons across States")
-select_state = st.multiselect('Choose One or More States',states,default=['New Jersey','California'])
+select_state = st.multiselect('Choose One or More States',states,default='New Jersey')
 
-start_date_state = st.slider("Choose Starting Date",date_min, date_max,value=default_8month_ago,key='start_date_state')
+start_date_state = st.slider("Choose Starting Date",date_min, date_max,value=default_amonth_ago,key='start_date_state')
 end_date_state = st.slider("Choose Ending Date", date_min, date_max,value=default_ending_date,key='end_date_state')
 
 
@@ -158,14 +165,14 @@ df_state = dfx.query('date >= @start_date_state & date <= @end_date_state').set_
 #df_state = dfx.query('date> @default_starting_date').set_index('date').loc[:,select_state]
 
 
-fig_state_epi = px.bar(df_state.diff().round(),labels={'value':'New '+data_type,'date':''})
+fig_state_epi = px.bar(df_state.diff().round(),labels={'value':'New '+data_type,'date':''},template=plot_template)
 fig_state_epi.update_layout(width=770,height=500,legend=dict(
     yanchor="top",
     y=0.99,
     xanchor="left",
     x=0.01
 ))
-fig_state_acc = px.area(df_state.diff().diff().rolling(7).mean(),labels={'value':data_type+' Acceleration','date':''})
+fig_state_acc = px.area(df_state.diff().diff().rolling(7).mean(),labels={'value':data_type+' Acceleration','date':''},template=plot_template)
 
 fig_state_acc.update_layout(width=770,height=500,legend=dict(
     yanchor="top",
@@ -178,5 +185,3 @@ st.plotly_chart(fig_state_epi)
 st.plotly_chart(fig_state_acc)
 
 st.markdown("---")
-
-st.markdown("## More is coming soon ...")
