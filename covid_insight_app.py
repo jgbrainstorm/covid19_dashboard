@@ -4,7 +4,7 @@ import pandas as pd
 import datetime
 import json
 import plotly.io as pio
-pio.templates.default="ggplot2"
+pio.templates.default="plotly"
 
 
 
@@ -15,8 +15,6 @@ default_starting_date = today - datetime.timedelta(days=9)
 default_ending_date = today - datetime.timedelta(days=2)
 default_amonth_ago = today - datetime.timedelta(days=30)
 default_8month_ago = today - datetime.timedelta(days=240)
-
-
 
 # --- define functions -------
 
