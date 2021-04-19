@@ -4,7 +4,7 @@ import pandas as pd
 import datetime
 import json
 import plotly.io as pio
-pio.templates.default="plotly"
+pio.templates.default="ggplot2"
 
 
 
@@ -33,7 +33,7 @@ def load_data():
 
 @st.cache(ttl=3600)
 def load_dictionary():
-    state_fips = pd.read_csv('data/state_fips.csv')
+    state_fips = pd.read_csv('data/state_fips.csv',dtype={"fips":str})
     state_fips_dict = dict(zip(state_fips.state, state_fips.fips))
     return state_fips_dict
 
@@ -73,7 +73,8 @@ date_max = dfx.date.max()
 # ---  single state summary ---------
 st.markdown("## Your State at A Glance")
 
-select_single_state = st.select_slider('Choose one State you want to get a Summary',states,value='New Jersey')
+#select_single_state = st.select_slider('Choose one State you want to get a Summary',states,value='New Jersey')
+select_single_state = st.selectbox('Choose one State you want to get a Summary',states)
 
 average_increase = dfx.query('date >= @default_starting_date & date <= @default_ending_date').loc[:,[select_single_state]].diff().mean().values[0]
 
@@ -82,8 +83,8 @@ average_acceleration = dfx.query('date >= @default_starting_date & date <= @defa
 
 current_total = dfx.query('date == @default_ending_date').loc[:,select_single_state].values[0]
 
-st.markdown(f"### In the week from {default_starting_date} to {default_ending_date}, in the State of {select_single_state}")
-st.markdown(f"* The total {data_type} as of {default_ending_date} is: **{round(current_total)}**")
+st.markdown(f"### The total {data_type} as of {default_ending_date} is: **{round(current_total)}**")
+st.markdown(f"In the week from {default_starting_date} to {default_ending_date}, in the State of {select_single_state}")
 st.markdown(f"* The Average of new {data_type} of every day is: **{round(average_increase)}**")
 st.markdown(f"* The Average acceleration of new {data_type} of every day is: **{round(average_acceleration)}**")
 
@@ -106,12 +107,12 @@ df_state_new['fips'] = df_state_new.state.replace(state_fips_dict).astype('str')
 date_map= st.slider("Choose a date",date_min, date_max, value=default_starting_date,key='date_map')
 
 if data_type == "Confirmed Cases":
-    fig_map = px.choropleth_mapbox(df_state_new.query('date == @date_map'), geojson=state_json, locations='fips', color='acceleration', color_continuous_scale="RdBu_r", range_color=(-1000, 1000),mapbox_style="carto-positron", zoom=2.5, center = {"lat": 37.0902, "lon": -95.7129},opacity=1,hover_name='state')
+    fig_map = px.choropleth_mapbox(df_state_new.query('date == @date_map'), geojson=state_json, locations='fips', color='acceleration', color_continuous_scale="Viridis", range_color=(-1000, 1000),mapbox_style="carto-positron", zoom=2.8, center = {"lat": 37.0902, "lon": -95.7129},opacity=1,hover_name='state')
 else:
-    fig_map = px.choropleth_mapbox(df_state_new.query('date == @date_map'), geojson=state_json, locations='fips', color='acceleration', color_continuous_scale="RdBu_r", range_color=(-50, 50),mapbox_style="carto-positron", zoom=2.5, center = {"lat": 37.0902, "lon": -95.7129},opacity=1,hover_name='state')
+    fig_map = px.choropleth_mapbox(df_state_new.query('date == @date_map'), geojson=state_json, locations='fips', color='acceleration', color_continuous_scale="RdBu_r", range_color=(-50, 50),mapbox_style="carto-positron", zoom=2.8, center = {"lat": 37.0902, "lon": -95.7129},opacity=1,hover_name='state')
     
 
-fig_map.update_layout(width=700,height=500)
+fig_map.update_layout(width=700,height=400,margin={"r":0,"t":0,"l":0,"b":0})
 
 st.plotly_chart(fig_map)
 
